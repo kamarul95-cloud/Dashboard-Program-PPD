@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard — Live Test</title>
+  <title>Dashboard — Responsive (Table & Card)</title>
   <style>
 :root{
   --bg:#071024;
@@ -64,6 +64,39 @@ tbody tr:hover{background:rgba(255,255,255,0.02)}
 /* pill */
 .pill{padding:6px 8px;border-radius:999px;font-size:12px;font-weight:600}
 
+/* ===== Card view styles (mobile-friendly) ===== */
+.card-item {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.03);
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 6px 18px rgba(3,7,18,0.45);
+}
+.card-item .row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+.card-item .row .label { min-width:110px; font-weight:700; color:var(--muted); font-size:13px; text-transform:uppercase; }
+.card-item .val { flex:1; font-size:15px; color:inherit; }
+.card-item .meta { font-size:13px; color:var(--muted); margin-top:6px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.card-actions { display:flex; gap:8px; margin-top:8px; justify-content:flex-end; }
+.card-actions button{ padding:8px 10px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer; }
+
+/* Make table hidden on small screens and use cards instead */
+@media (max-width: 768px) {
+  table { display:none; }
+  #tableWrap { overflow:visible; }
+  /* ensure modal fits phone */
+  .modal{ max-width:92vw; padding:12px; }
+}
+
+/* Larger screens (wider desktop) — make content use more width and breathe */
+@media (min-width: 1200px) {
+  :root{--max-width:1300px}
+  body{font-size:15px}
+  .card{padding:18px}
+  table{min-width:1000px}
+  .modal{width:720px}
+}
+
 /* RESPONSIVE: Mobile first tweaks (phones) */
 @media (max-width: 640px) {
   body{padding:12px;font-size:17px} /* bigger text on phones */
@@ -87,21 +120,11 @@ tbody tr:hover{background:rgba(255,255,255,0.02)}
   .modal{width:100%;height:auto;border-radius:12px;padding:14px}
 }
 
-/* Larger screens (wider desktop) — make content use more width and breathe */
-@media (min-width: 1200px) {
-  :root{--max-width:1300px}
-  body{font-size:15px}
-  .card{padding:18px}
-  table{min-width:1000px}
-  .modal{width:720px}
-}
-
 /* Accessibility: focus outlines */
 button:focus, input:focus, select:focus { outline:3px solid rgba(6,182,212,0.12); outline-offset:2px }
 
 /* small helper */
 .center{display:flex;align-items:center;justify-content:center}
-
   </style>
 </head>
 <body>
@@ -184,7 +207,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbx0vXghbmsoA-XT9odtwGem
 /* ====== END CONFIG ====== */
 
 let RAW = [];        // raw rows from server
-let DATA = [];       // normalized objects {bil, program, tarikh, tempat, lajnah, bulan, kos}
+let DATA = [];       // normalized objects {bil, program, tarikh, tempat, lajnah, bulan, kos, STATUS, BY, AT}
 let editIndex = -1;
 let isAdmin = false;
 
@@ -193,37 +216,13 @@ function log(msg){ document.getElementById('log').innerText = 'Log: ' + msg; con
 function show(el){ el.style.display='block'; }
 function hide(el){ el.style.display='none'; }
 function toNum(v){ const n=Number(String(v).replace(/,/g,'')); return isNaN(n)?0:n; }
+function now(){ return new Date().toLocaleString(); }
 
 /* Normalize server row to object
-   Accepts:
-   - object with keys (bil, program, tarikh, tempat, lajnah, bulan, kos) OR
-   - array (row) where columns correspond to [bil, program, tarikh, tempat, lajnah, bulan, kos] OR
-   - object with other header names (attempt to map)
+   Accepts object or array
 */
 function normalizeRow(raw){
   if(!raw) return null;
-  // object-like with keys
-  if(typeof raw === 'object' && !Array.isArray(raw)){
-    const keys = Object.keys(raw).map(k=>k.toLowerCase());
-    // common key detection
-    const pick = (candidates) => {
-      for(const cand of candidates){
-        const idx = keys.indexOf(cand.toLowerCase());
-        if(idx !== -1) return raw[Object.keys(raw)[idx]];
-      }
-      return undefined;
-    };
-    return {
-      bil: pick(['bil','no','no.']) ?? raw.BIL ?? raw.Bil ?? '',
-      program: pick(['aktiviti/program','aktiviti','program']) ?? raw['AKTIVITI/PROGRAM'] ?? raw['AKTIVITI'] ?? '',
-      tarikh: pick(['tarikh','date']) ?? raw.TARIKH ?? '',
-      tempat: pick(['tempat','venue']) ?? raw.TEMPAT ?? '',
-      lajnah: pick(['lajnah/jabatan','lajnah','jabatan']) ?? raw['LAJNAH/JABATAN'] ?? '',
-      bulan: pick(['bulan','month']) ?? raw.BULAN ?? '',
-      kos: pick(['kos','cost']) ?? raw.KOS ?? 0
-    };
-  }
-  // array-like
   if(Array.isArray(raw)){
     return {
       bil: raw[0] ?? '',
@@ -232,53 +231,124 @@ function normalizeRow(raw){
       tempat: raw[3] ?? '',
       lajnah: raw[4] ?? '',
       bulan: raw[5] ?? '',
-      kos: raw[6] ?? 0
+      kos: raw[6] ?? 0,
+      STATUS: raw[7] ?? '',
+      BY: raw[8] ?? '',
+      AT: raw[9] ?? ''
     };
   }
-  return null;
+  // object-like
+  const getKey = (cands)=>{
+    for(const k of Object.keys(raw)){
+      const kl = k.toString().toLowerCase();
+      for(const c of cands) if(kl === c) return raw[k];
+    }
+    return undefined;
+  };
+  return {
+    bil: getKey(['bil','no','no.']) ?? raw.BIL ?? raw.bil ?? '',
+    program: getKey(['aktiviti/program','aktiviti','program']) ?? raw['AKTIVITI/PROGRAM'] ?? raw.AKTIVITI ?? raw.program ?? '',
+    tarikh: getKey(['tarikh','date']) ?? raw.TARIKH ?? raw.date ?? '',
+    tempat: getKey(['tempat','venue']) ?? raw.TEMPAT ?? raw.venue ?? raw.tempat ?? '',
+    lajnah: getKey(['lajnah/jabatan','lajnah','jabatan']) ?? raw['LAJNAH/JABATAN'] ?? raw.lajnah ?? '',
+    bulan: getKey(['bulan','month']) ?? raw.BULAN ?? raw.month ?? raw.bulan ?? '',
+    kos: Number(getKey(['kos','cost']) ?? raw.KOS ?? raw.cost ?? 0) || 0,
+    STATUS: getKey(['status']) ?? raw.STATUS ?? raw.status ?? '',
+    BY: getKey(['by','created_by']) ?? raw.BY ?? raw.by ?? '',
+    AT: getKey(['at','timestamp']) ?? raw.AT ?? raw.at ?? ''
+  };
 }
 
-/* ---------- RENDER ---------- */
-function renderTable(){
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML = '';
-  const theadRow = document.getElementById('theadRow');
-  theadRow.innerHTML = '';
-  // build header
-  const headers = ['BIL','AKTIVITI / PROGRAM','TARIKH','TEMPAT','LAJNAH / JABATAN','BULAN','KOS','ACTION'];
-  headers.forEach(h=>{
-    const th = document.createElement('th'); th.innerText=h; theadRow.appendChild(th);
-  });
+/* ---------- RESPONSIVE RENDER ---------- */
+function isMobile(){ return window.innerWidth <= 768; }
 
-  if(DATA.length === 0){ show(document.getElementById('emptyMsg')); return; }
+function renderTable(){
+  if(isMobile()) return renderCards(DATA);
+  return renderTableDesktop(DATA);
+}
+
+function renderTableDesktop(rows){
+  const tbody = document.getElementById('tbody'); tbody.innerHTML = '';
+  const theadRow = document.getElementById('theadRow'); theadRow.innerHTML = '';
+  const headers = ['BIL','AKTIVITI / PROGRAM','TARIKH','TEMPAT','LAJNAH / JABATAN','BULAN','KOS','ACTION'];
+  headers.forEach(h=>{ const th = document.createElement('th'); th.innerText=h; theadRow.appendChild(th); });
+
+  if(!rows || rows.length === 0){ show(document.getElementById('emptyMsg')); return; }
   hide(document.getElementById('emptyMsg'));
 
-  DATA.forEach((r, i) => {
+  rows.forEach((r,i)=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${r.bil ?? ''}</td>
-      <td>${r.program ?? ''}</td>
-      <td>${r.tarikh ?? ''}</td>
-      <td>${r.tempat ?? ''}</td>
-      <td>${r.lajnah ?? ''}</td>
-      <td>${r.bulan ?? ''}</td>
-      <td style="text-align:right">${r.kos ?? ''}</td>
-      <td></td>
+    tr.innerHTML = `\
+      <td>${r.bil ?? ''}</td>\
+      <td>${r.program ?? ''}</td>\
+      <td>${r.tarikh ?? ''}</td>\
+      <td>${r.tempat ?? ''}</td>\
+      <td>${r.lajnah ?? ''}</td>\
+      <td>${r.bulan ?? ''}</td>\
+      <td style="text-align:right">${(r.kos||0).toLocaleString()}</td>\
+      <td></td>\
     `;
     const actionTd = tr.querySelector('td:last-child');
     if(isAdmin){
-      const editBtn = document.createElement('button'); editBtn.className='ghost'; editBtn.innerText='Edit';
-      editBtn.onclick = ()=> openModalForEdit(i);
-      const delBtn = document.createElement('button'); delBtn.className='ghost'; delBtn.innerText='Padam';
-      delBtn.onclick = ()=> doDelete(i);
+      const editBtn = document.createElement('button'); editBtn.className='ghost'; editBtn.innerText='Edit'; editBtn.onclick = ()=> openModalForEdit(i);
+      const delBtn = document.createElement('button'); delBtn.className='ghost'; delBtn.innerText='Padam'; delBtn.onclick = ()=> doDelete(i);
       actionTd.appendChild(editBtn); actionTd.appendChild(document.createTextNode(' ')); actionTd.appendChild(delBtn);
     } else {
-      const lock = document.createElement('span'); lock.className='muted'; lock.innerText='—';
-      actionTd.appendChild(lock);
+      const lock = document.createElement('span'); lock.className='muted'; lock.innerText='—'; actionTd.appendChild(lock);
     }
     tbody.appendChild(tr);
   });
 }
+
+function renderCards(rows){
+  // ensure container
+  let cardList = document.getElementById('cardList');
+  if(!cardList){
+    cardList = document.createElement('div');
+    cardList.id = 'cardList';
+    document.getElementById('tableWrap').appendChild(cardList);
+  }
+  cardList.innerHTML = '';
+
+  if(!rows || rows.length === 0){ show(document.getElementById('emptyMsg')); return; }
+  hide(document.getElementById('emptyMsg'));
+
+  rows.forEach((r,i)=>{
+    const card = document.createElement('div'); card.className='card-item';
+    const titleRow = document.createElement('div'); titleRow.className='row';
+    const title = document.createElement('div'); title.className='val'; title.style.fontWeight='800'; title.innerText = r.program || '—';
+    const cost = document.createElement('div'); cost.className='val'; cost.style.textAlign='right'; cost.style.minWidth='90px'; cost.innerHTML = `<strong>RM ${(Number(r.kos)||0).toLocaleString()}</strong>`;
+    titleRow.appendChild(title); titleRow.appendChild(cost);
+
+    const d1 = document.createElement('div'); d1.className='row'; d1.innerHTML = `<div class="label">Tarikh</div><div class="val">${r.tarikh||'—'}</div>`;
+    const d2 = document.createElement('div'); d2.className='row'; d2.innerHTML = `<div class="label">Tempat</div><div class="val">${r.tempat||'—'}</div>`;
+    const d3 = document.createElement('div'); d3.className='row'; d3.innerHTML = `<div class="label">Lajnah</div><div class="val">${(r.lajnah||'—').toString()}</div>`;
+    const d4 = document.createElement('div'); d4.className='row'; d4.innerHTML = `<div class="label">Bulan</div><div class="val">${r.bulan||'—'}</div>`;
+
+    const meta = document.createElement('div'); meta.className='meta';
+    const metaLeft = document.createElement('div'); metaLeft.className='muted'; metaLeft.innerText = `BIL: ${r.bil || '—'}`;
+    const metaRight = document.createElement('div'); metaRight.style.display='flex'; metaRight.style.gap='8px';
+    if(isAdmin){
+      const editBtn = document.createElement('button'); editBtn.className='ghost'; editBtn.innerText='Edit'; editBtn.onclick = ()=> openModalForEdit(i);
+      const delBtn = document.createElement('button'); delBtn.className='ghost'; delBtn.innerText='Padam'; delBtn.onclick = ()=> doDelete(i);
+      metaRight.appendChild(editBtn); metaRight.appendChild(delBtn);
+    } else {
+      const status = document.createElement('div'); status.className='muted'; status.innerText = r.STATUS || '';
+      metaRight.appendChild(status);
+    }
+    meta.appendChild(metaLeft); meta.appendChild(metaRight);
+
+    card.appendChild(titleRow);
+    card.appendChild(d1); card.appendChild(d2); card.appendChild(d3); card.appendChild(d4);
+    card.appendChild(meta);
+
+    cardList.appendChild(card);
+  });
+}
+
+// Re-render on resize to switch view
+let resizeTimeout = null;
+window.addEventListener('resize', ()=>{ clearTimeout(resizeTimeout); resizeTimeout = setTimeout(()=>{ renderTable(); }, 120); });
 
 /* ---------- FETCH DATA ---------- */
 async function loadData(){
@@ -291,29 +361,17 @@ async function loadData(){
     console.log('RAW RESPONSE:', json);
 
     let rows = [];
-    // possible shapes:
-    // 1) { success:true, data:[ {..}, {...} ] }
     if(json && typeof json === 'object' && Array.isArray(json.data)) rows = json.data;
-    // 2) array of objects or arrays
     else if(Array.isArray(json)) rows = json;
-    // 3) maybe { success:true, result: [...] }
     else if(json && typeof json === 'object' && Array.isArray(json.result)) rows = json.result;
-    else{
-      log('Tindak balas tak difahami, periksa console.');
-      console.warn('Unknown response:', json);
-      rows = [];
-    }
+    else { log('Tindak balas tak difahami, periksa console.'); console.warn('Unknown response:', json); rows = []; }
 
-    // normalize
     RAW = rows;
     DATA = rows.map(r => normalizeRow(r)).filter(x=>x !== null);
     log('Data dimuat: ' + DATA.length + ' baris.');
     renderTable();
     buildFilters();
-  } catch(err){
-    console.error('loadData error', err);
-    log('Gagal muat data: ' + err.message);
-  }
+  } catch(err){ console.error('loadData error', err); log('Gagal muat data: ' + err.message); }
 }
 
 /* ---------- FILTERS ---------- */
@@ -332,156 +390,45 @@ function applyFilters(){
   const filtered = DATA.filter(r=>{
     if(fl && (r.lajnah||'') !== fl) return false;
     if(fb && (r.bulan||'') !== fb) return false;
-    if(q){
-      const hay = ((r.program||'') + ' ' + (r.tempat||'') + ' ' + (r.lajnah||'') + ' ' + (r.bulan||'')).toLowerCase();
-      if(!hay.includes(q)) return false;
-    }
+    if(q){ const hay = ((r.program||'') + ' ' + (r.tempat||'') + ' ' + (r.lajnah||'') + ' ' + (r.bulan||'')).toLowerCase(); if(!hay.includes(q)) return false; }
     return true;
   });
-  // render filtered
-  const prev = DATA;
-  DATA = filtered;
-  renderTable();
-  DATA = prev; // restore original after render
+  const prev = DATA; DATA = filtered; renderTable(); DATA = prev;
 }
 
 /* ---------- MODAL / ADD / EDIT ---------- */
-function openModalForAdd(){
-  editIndex = -1;
-  document.getElementById('modalTitle').innerText = 'Tambah Program';
-  clearModalFields();
-  show(document.getElementById('modal'));
-}
-function openModalForEdit(i){
-  editIndex = i;
-  const r = DATA[i];
-  document.getElementById('modalTitle').innerText = 'Kemaskini Program';
-  document.getElementById('m_bil').value = r.bil ?? '';
-  document.getElementById('m_program').value = r.program ?? '';
-  document.getElementById('m_tarikh').value = r.tarikh ?? '';
-  document.getElementById('m_tempat').value = r.tempat ?? '';
-  document.getElementById('m_lajnah').value = r.lajnah ?? '';
-  document.getElementById('m_bulan').value = r.bulan ?? '';
-  document.getElementById('m_kos').value = r.kos ?? '';
-  show(document.getElementById('modal'));
-}
-function clearModalFields(){
-  ['m_bil','m_program','m_tarikh','m_tempat','m_lajnah','m_bulan','m_kos'].forEach(id=>document.getElementById(id).value='');
-}
+function openModalForAdd(){ editIndex = -1; document.getElementById('modalTitle').innerText = 'Tambah Program'; clearModalFields(); show(document.getElementById('modal')); }
+function openModalForEdit(i){ editIndex = i; const r = DATA[i]; document.getElementById('modalTitle').innerText = 'Kemaskini Program'; document.getElementById('m_bil').value = r.bil ?? ''; document.getElementById('m_program').value = r.program ?? ''; document.getElementById('m_tarikh').value = r.tarikh ?? ''; document.getElementById('m_tempat').value = r.tempat ?? ''; document.getElementById('m_lajnah').value = r.lajnah ?? ''; document.getElementById('m_bulan').value = r.bulan ?? ''; document.getElementById('m_kos').value = r.kos ?? ''; show(document.getElementById('modal')); }
+function clearModalFields(){ ['m_bil','m_program','m_tarikh','m_tempat','m_lajnah','m_bulan','m_kos'].forEach(id=>document.getElementById(id).value=''); }
 document.getElementById('m_cancel').addEventListener('click', ()=>hide(document.getElementById('modal')));
 
 document.getElementById('m_save').addEventListener('click', async ()=>{
-  const record = {
-    bil: document.getElementById('m_bil').value || '',
-    program: document.getElementById('m_program').value || '',
-    tarikh: document.getElementById('m_tarikh').value || '',
-    tempat: document.getElementById('m_tempat').value || '',
-    lajnah: document.getElementById('m_lajnah').value || '',
-    bulan: document.getElementById('m_bulan').value || '',
-    kos: document.getElementById('m_kos').value || 0
-  };
+  const record = { bil: document.getElementById('m_bil').value || '', program: document.getElementById('m_program').value || '', tarikh: document.getElementById('m_tarikh').value || '', tempat: document.getElementById('m_tempat').value || '', lajnah: document.getElementById('m_lajnah').value || '', bulan: document.getElementById('m_bulan').value || '', kos: document.getElementById('m_kos').value || 0 };
   if(!record.program){ alert('Sila isi nama aktiviti'); return; }
   hide(document.getElementById('modal'));
-  if(editIndex >= 0){
-    // update
-    try{
-      log('Menghantar kemaskini ke server...');
-      const resp = await fetch(API_URL, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ action: 'update', record })
-      });
-      const j = await resp.json().catch(()=>({}));
-      console.log('UPDATE RESPONSE', j);
-      if(j && j.success) { log('Kemas kini berjaya'); }
-      else log('Respon server: ' + (j.message || JSON.stringify(j)));
-    }catch(e){ console.error(e); log('Gagal kemaskini: ' + e.message); }
-  } else {
-    // add
-    try{
-      log('Menghantar tambah ke server...');
-      const resp = await fetch(API_URL, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ action: 'add', record })
-      });
-      const j = await resp.json().catch(()=>({}));
-      console.log('ADD RESPONSE', j);
-      if(j && j.success) { log('Tambah berjaya'); }
-      else log('Respon server: ' + (j.message || JSON.stringify(j)));
-    }catch(e){ console.error(e); log('Gagal tambah: ' + e.message); }
-  }
-  // reload data after slight delay
+  if(editIndex >= 0){ try{ log('Menghantar kemaskini ke server...'); const resp = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action: 'update', record }) }); const j = await resp.json().catch(()=>({})); console.log('UPDATE RESPONSE', j); if(j && j.success) { log('Kemas kini berjaya'); } else log('Respon server: ' + (j.message || JSON.stringify(j))); }catch(e){ console.error(e); log('Gagal kemaskini: ' + e.message); } } else { try{ log('Menghantar tambah ke server...'); const resp = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action: 'add', record }) }); const j = await resp.json().catch(()=>({})); console.log('ADD RESPONSE', j); if(j && j.success) { log('Tambah berjaya'); } else log('Respon server: ' + (j.message || JSON.stringify(j))); }catch(e){ console.error(e); log('Gagal tambah: ' + e.message); } }
   setTimeout(loadData, 700);
 });
 
 /* ---------- DELETE ---------- */
-async function doDelete(i){
-  if(!confirm('Padam rekod ini?')) return;
-  const row = DATA[i];
-  try{
-    log('Hantar permintaan padam...');
-    const resp = await fetch(API_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'delete', record: { bil: row.bil } })
-    });
-    const j = await resp.json().catch(()=>({}));
-    console.log('DELETE RESPONSE', j);
-    if(j && j.success) log('Padam berjaya');
-    else log('Respon server: ' + (j.message || JSON.stringify(j)));
-  }catch(e){ console.error(e); log('Gagal padam: ' + e.message); }
-  setTimeout(loadData, 700);
-}
+async function doDelete(i){ if(!confirm('Padam rekod ini?')) return; const row = DATA[i]; try{ log('Hantar permintaan padam...'); const resp = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'delete', record: { bil: row.bil } }) }); const j = await resp.json().catch(()=>({})); console.log('DELETE RESPONSE', j); if(j && j.success) log('Padam berjaya'); else log('Respon server: ' + (j.message || JSON.stringify(j))); }catch(e){ console.error(e); log('Gagal padam: ' + e.message); } setTimeout(loadData, 700); }
 
 /* ---------- LOGIN ---------- */
 document.getElementById('btnLogin').addEventListener('click', ()=> show(document.getElementById('loginModal')));
 document.getElementById('li_cancel').addEventListener('click', ()=> hide(document.getElementById('loginModal')));
-document.getElementById('li_ok').addEventListener('click', ()=> {
-  const id = document.getElementById('li_id').value.trim();
-  const pw = document.getElementById('li_pw').value.trim();
-  if(id === 'qamar' && pw === 'qamar'){
-    isAdmin = true;
-    localStorage.setItem('isAdmin','1');
-    updateUIForAuth();
-    hide(document.getElementById('loginModal'));
-    log('Login admin berjaya');
-    loadData();
-  } else {
-    document.getElementById('li_err').style.display='block';
-    document.getElementById('li_err').innerText='ID / password salah';
-  }
-});
-function updateUIForAuth(){
-  document.getElementById('who').innerText = isAdmin ? 'Admin (qamar)' : 'Guest';
-  document.getElementById('btnLogin').style.display = isAdmin ? 'none' : 'inline-block';
-  if(isAdmin){
-    const btnLogout = document.getElementById('btnLogout');
-    if(!btnLogout){
-      const b = document.createElement('button'); b.id='btnLogout'; b.className='ghost'; b.innerText='Logout';
-      b.onclick = ()=>{ isAdmin=false; localStorage.removeItem('isAdmin'); updateUIForAuth(); loadData(); log('Logout'); };
-      document.querySelector('.right').appendChild(b);
-    } else btnLogout.style.display='inline-block';
-  }
-}
+document.getElementById('li_ok').addEventListener('click', ()=> { const id = document.getElementById('li_id').value.trim(); const pw = document.getElementById('li_pw').value.trim(); if(id === 'qamar' && pw === 'qamar'){ isAdmin = true; localStorage.setItem('isAdmin','1'); updateUIForAuth(); hide(document.getElementById('loginModal')); log('Login admin berjaya'); loadData(); } else { document.getElementById('li_err').style.display='block'; document.getElementById('li_err').innerText='ID / password salah'; } });
+function updateUIForAuth(){ document.getElementById('who').innerText = isAdmin ? 'Admin (qamar)' : 'Guest'; document.getElementById('btnLogin').style.display = isAdmin ? 'none' : 'inline-block'; if(isAdmin){ const btnLogout = document.getElementById('btnLogout'); if(!btnLogout){ const b = document.createElement('button'); b.id='btnLogout'; b.className='ghost'; b.innerText='Logout'; b.onclick = ()=>{ isAdmin=false; localStorage.removeItem('isAdmin'); updateUIForAuth(); loadData(); log('Logout'); }; document.querySelector('.right').appendChild(b); } else btnLogout.style.display='inline-block'; } }
 
 /* ---------- Hooks ---------- */
 document.getElementById('btnRefresh').addEventListener('click', ()=> loadData());
-document.getElementById('btnAddNew').addEventListener('click', ()=> {
-  if(!isAdmin){ if(!confirm('Anda belum login sebagai Admin. Terus tambah sebagai User (rekod akan Menunggu Kelulusan)?')) return; }
-  openModalForAdd();
-});
+document.getElementById('btnAddNew').addEventListener('click', ()=> { if(!isAdmin){ if(!confirm('Anda belum login sebagai Admin. Terus tambah sebagai User (rekod akan Menunggu Kelulusan)?')) return; } openModalForAdd(); });
 document.getElementById('btnClear').addEventListener('click', ()=> { document.getElementById('search').value=''; document.getElementById('filterLajnah').value=''; document.getElementById('filterBulan').value=''; applyFilters(); });
 document.getElementById('search').addEventListener('input', applyFilters);
 document.getElementById('filterLajnah').addEventListener('change', applyFilters);
 document.getElementById('filterBulan').addEventListener('change', applyFilters);
 
 /* ---------- Init ---------- */
-(function init(){
-  if(localStorage.getItem('isAdmin')) isAdmin = true;
-  updateUIForAuth();
-  loadData();
-})();
+(function init(){ if(localStorage.getItem('isAdmin')) isAdmin = true; updateUIForAuth(); loadData(); })();
 </script>
 </body>
 </html>
