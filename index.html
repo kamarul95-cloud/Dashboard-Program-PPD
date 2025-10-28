@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard Program Lajnah / Jabatan — 2025-2026 (v1.2)</title>
+  <style>
+    :root{--bg:#071024;--card:#0b1220;--muted:#94a3b8;--accent:#06b6d4;--glass: rgba(255,255,255,0.03)}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{margin:0;background:linear-gradient(180deg,#071024 0%,#081025 60%);color:#e6eef6;min-height:100vh;padding:28px}
+    .wrap{max-width:1100px;margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 24px rgba(3,7,18,0.6);}
+
+    /* controls */
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+    input[type=text],input[type=password],select{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px 10px;border-radius:8px;min-width:140px}
+    button{background:var(--accent);border:none;padding:9px 12px;border-radius:8px;color:#04283a;font-weight:600;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+
+    /* table */
+    .table-wrap{overflow:auto;margin-top:12px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead th{position:sticky;top:0;background:linear-gradient(180deg,#071224,#08182a);text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.04);font-weight:600}
+    tbody td{padding:10px;border-bottom:1px dashed rgba(255,255,255,0.03)}
+    tbody tr:hover{background:rgba(255,255,255,0.02)}
+    .muted{color:var(--muted);font-size:12px}
+
+    /* form */
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+    .small{font-size:12px;padding:7px}
+
+    footer{margin-top:18px;color:var(--muted);font-size:12px}
+
+    /* status pills */
+    .pill{padding:6px 8px;border-radius:999px;font-size:12px;font-weight:600}
+    .s-draft{background:#fef3c7;color:#a16207} /* yellow */
+    .s-pend{background:#bfdbfe;color:#1e3a8a} /* blue */
+    .s-accept{background:#bbf7d0;color:#064e3b} /* green */
+    .s-reject{background:#fecaca;color:#7f1d1d} /* red */
+
+    /* login modal */
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.7)}
+    .login-card{width:340px;padding:18px;border-radius:12px;background:linear-gradient(180deg,#071226,#0b1526)}
+
+    .hint{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;color:var(--muted);font-size:13px}
+
+    .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+    @media(max-width:640px){.form-grid{grid-template-columns:1fr}}
+    /* small visual tweak for disabled ghost btn */
+    button[disabled] { opacity:0.5; cursor:not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Dashboard Program — Lajnah / Jabatan Pemuda (2025–2026)</h1>
+        <p class="lead">Versi 1.2 — Live with Google Sheet. Log masuk: id/password <code>qamar</code>/<code>qamar</code>.</p>
+      </div>
+      <div id="userBox" class="muted">Status: <span id="who">Guest</span> &nbsp; <button id="btnLogout" class="ghost" style="display:none">Logout</button></div>
+    </header>
+
+    <div class="card">
+      <div class="controls">
+        <input id="search" type="text" placeholder="Cari aktiviti / tempat..." />
+        <select id="filterLajnah"><option value="">-- Semua Lajnah / Jabatan --</option></select>
+        <select id="filterBulan"><option value="">-- Semua Bulan --</option></select>
+        <button id="btnClear" class="ghost">Reset</button>
+        <button id="btnExport">Export CSV</button>
+        <div class="right">
+          <button id="btnShowAdd">Tambah Program Baru</button>
+          <button id="btnLogin" class="ghost">Log Masuk</button>
+        </div>
+      </div>
+
+      <div class="hint" id="topHint">💡 Untuk tambah data baru, klik “Tambah Program Baru”. Untuk edit, tekan butang “Edit” pada baris jadual — borang akan muncul secara automatik dengan data terisi. Rekod baru memerlukan kelulusan oleh Admin.</div>
+
+      <div class="table-wrap card" style="margin:12px 0 0 0;padding:0;border-radius:10px;">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>BIL</th>
+              <th>AKTIVITI / PROGRAM</th>
+              <th>TARIKH</th>
+              <th>TEMPAT</th>
+              <th>LAJNAH / JABATAN</th>
+              <th>BULAN</th>
+              <th>STATUS</th>
+              <th style="text-align:right">KOS (RM)</th>
+              <th>ACTION</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div id="emptyMsg" class="muted" style="padding:18px;display:none">Tiada rekod untuk dipaparkan.</div>
+      </div>
+
+      <!-- form (hidden by default) -->
+      <div id="formCard" class="card" style="margin-top:12px;display:none">
+        <strong id="formTitle">Tambah Program</strong>
+        <div class="form-grid" style="margin-top:8px">
+          <input id="f_bil" class="small" placeholder="BIL" />
+          <input id="f_aktiviti" class="small" placeholder="AKTIVITI / PROGRAM" />
+          <input id="f_tarikh" class="small" placeholder="TARIKH (dd/mm/yyyy)" />
+          <input id="f_tempat" class="small" placeholder="TEMPAT" />
+          <input id="f_lajnah" class="small" placeholder="LAJNAH / JABATAN" />
+          <input id="f_bulan" class="small" placeholder="BULAN (contoh: November)" />
+          <input id="f_kos" class="small" placeholder="KOS (RM)" />
+          <div>
+            <button id="btnAdd">Simpan</button>
+            <button id="btnCancel" class="ghost">Batal</button>
+          </div>
+        </div>
+        <div class="muted" style="margin-top:8px;font-size:12px">Catatan: Rekod baru akan dimasukkan sebagai <strong>Menunggu Kelulusan</strong> (kecuali Admin membuatnya Lulus terus).</div>
+      </div>
+
+      <hr style="border:none;height:8px;background:transparent" />
+
+      <div class="muted" style="font-size:13px">Log ringkas: <span id="logLine">—</span></div>
+
+    </div>
+
+    <footer>Tip: login sebagai Admin untuk melihat/urus semua rekod.</footer>
+  </div>
+
+  <!-- login overlay -->
+  <div id="loginOverlay" class="overlay" style="display:none">
+    <div class="login-card">
+      <h3>Log Masuk</h3>
+      <p class="muted">Masukkan ID dan password (ujian: <code>qamar</code> / <code>qamar</code>).</p>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
+        <input id="loginId" placeholder="ID" />
+        <input id="loginPass" placeholder="Password" type="password" />
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button id="loginSubmit">Log Masuk</button>
+          <button id="loginClose" class="ghost">Tutup</button>
+        </div>
+        <div id="loginErr" class="muted" style="display:none;color:#fecaca"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  /***** CONFIG: letakkan URL Apps Script (yang kau sediakan) di sini *****/
+  const API_URL = 'https://script.google.com/macros/s/AKfycbx0vXghbmsoA-XT9odtwGemRtOXqo4oMeQdkhdJeDlLQ6tVnWNZ3r7nImO28aUIZB-uNw/exec';
+
+  /***** STATE & INITIAL SAMPLE (will be replaced by sheet data on load) *****/
+  let data = [];      // will be filled by loadData()
+  let editIndex = -1;
+  let isAdmin = false;
+
+  // elements
+  const tbody = document.querySelector('#dataTable tbody');
+  const selectLajnah = document.getElementById('filterLajnah');
+  const selectBulan = document.getElementById('filterBulan');
+
+  // helpers
+  function nowString(){ return new Date().toLocaleString(); }
+  function updateLog(msg){ document.getElementById('logLine').innerText = msg + ' — ' + nowString(); }
+  function formatMoney(x){ return Number(x||0).toLocaleString('en-US'); }
+  function escapeHtml(str){ if(str===undefined || str===null) return ''; return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+  function normalizeRow(raw){
+    // handle possible header naming differences from sheet (e.g. 'AKTIVITI/PROGRAM' vs 'AKTIVITI')
+    return {
+      BIL: raw.BIL ?? raw['BIL'] ?? raw['No'] ?? raw['No.'] ?? '',
+      AKTIVITI: raw.AKTIVITI ?? raw['AKTIVITI/PROGRAM'] ?? raw['AKTIVITI / PROGRAM'] ?? raw['AKTIVITI / PROGRAM'] ?? raw['ACTIVITY'] ?? '',
+      TARIKH: raw.TARIKH ?? raw['TARIKH'] ?? '',
+      TEMPAT: raw.TEMPAT ?? raw['TEMPAT'] ?? '',
+      LAJNAH: raw.LAJNAH ?? raw['LAJNAH'] ?? raw['LAJNAH/JABATAN'] ?? raw['LAJNAH / JABATAN'] ?? '',
+      BULAN: raw.BULAN ?? raw['BULAN'] ?? raw['MONTH'] ?? '',
+      KOS: raw.KOS ?? raw['KOS'] ?? raw['COST'] ?? 0,
+      STATUS: raw.STATUS ?? raw['STATUS'] ?? 'Draf',
+      BY: raw.BY ?? raw['BY'] ?? raw['CREATED_BY'] ?? '',
+      AT: raw.AT ?? raw['AT'] ?? raw['TIMESTAMP'] ?? ''
+    };
+  }
+
+  function statusPill(status){
+    if(status==='Draf') return `<span class="pill s-draft">Draf</span>`;
+    if(status==='Menunggu Kelulusan') return `<span class="pill s-pend">Menunggu</span>`;
+    if(status==='Lulus') return `<span class="pill s-accept">Lulus</span>`;
+    if(status==='Ditolak') return `<span class="pill s-reject">Ditolak</span>`;
+    return `<span class="pill">${escapeHtml(status)}</span>`;
+  }
+
+  /***** RENDER TABLE (uses global data) *****/
+  function renderTable(filtered){
+    tbody.innerHTML = '';
+    if(filtered.length === 0){
+      document.getElementById('emptyMsg').style.display = 'block';
+      return;
+    } else document.getElementById('emptyMsg').style.display = 'none';
+
+    filtered.forEach((row, idx) => {
+      const tr = document.createElement('tr');
+      let actions = '';
+      if(isAdmin){
+        actions = `<button class="ghost" onclick="doEdit(${idx})">Edit</button> <button class="ghost" onclick="doDelete(${idx})">Padam</button> <button class="ghost" onclick="changeStatus(${idx},'Lulus')">Lulus</button> <button class="ghost" onclick="changeStatus(${idx},'Ditolak')">Tolak</button>`;
+      } else {
+        actions = row.STATUS === 'Draf' ? `<button class="ghost" onclick="doEdit(${idx})">Edit</button>` : `<button class="ghost" disabled>Lock</button>`;
+      }
+
+      tr.innerHTML = `
+        <td>${escapeHtml(row.BIL)}</td>
+        <td>${escapeHtml(row.AKTIVITI)}</td>
+        <td>${escapeHtml(row.TARIKH || '')}</td>
+        <td>${escapeHtml(row.TEMPAT || '')}</td>
+        <td>${escapeHtml(row.LAJNAH || '')}</td>
+        <td class="muted">${escapeHtml(row.BULAN || '')}</td>
+        <td>${statusPill(row.STATUS)}</td>
+        <td style="text-align:right">${formatMoney(row.KOS)}</td>
+        <td>${actions}<div class="muted" style="font-size:11px;margin-top:6px">${escapeHtml(row.BY||'')} • ${escapeHtml(row.AT||'')}</div></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function unique(arr){ return [...new Set(arr.filter(x=>x && x.toString().trim()!=='').map(x=>x.toString().trim()))]; }
+
+  function rebuildFilters(){
+    const laj = unique(data.map(r=>r.LAJNAH));
+    const bul = unique(data.map(r=>r.BULAN));
+    selectLajnah.innerHTML = '<option value="">-- Semua Lajnah / Jabatan --</option>' + laj.map(x=>`<option value="${x}">${x}</option>`).join('');
+    selectBulan.innerHTML = '<option value="">-- Semua Bulan --</option>' + bul.map(x=>`<option value="${x}">${x}</option>`).join('');
+  }
+
+  function applyFilters(){
+    const q = document.getElementById('search').value.toLowerCase().trim();
+    const fl = selectLajnah.value;
+    const fb = selectBulan.value;
+    const filtered = data.filter(r => {
+      if(!isAdmin && r.STATUS !== 'Lulus') return false;
+      if(fl && (r.LAJNAH ?? '') !== fl) return false;
+      if(fb && (r.BULAN ?? '') !== fb) return false;
+      if(q){
+        const hay = ((r.AKTIVITI||'') + ' ' + (r.TEMPAT||'') + ' ' + (r.LAJNAH||'') + ' ' + (r.BULAN||'') + ' ' + (r.TARIKH||'')).toLowerCase();
+        if(!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    renderTable(filtered);
+  }
+
+  /***** GOOGLE SHEET INTEGRATION (reads + writes) *****/
+  async function loadData(){
+    updateLog('Muat data dari Google Sheet...');
+    try{
+      const url = API_URL + (API_URL.includes('?') ? '&' : '?') + 'action=read';
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      // expecting { data: [ ... ] } or maybe raw array; handle both
+      let raw = [];
+      if(Array.isArray(json)) raw = json;
+      else if(Array.isArray(json.data)) raw = json.data;
+      else if(json && typeof json === 'object' && Array.isArray(json.result)) raw = json.result;
+      else raw = [];
+      data = raw.map(r => normalizeRow(r));
+      rebuildFilters();
+      applyFilters();
+      updateLog('Data berjaya dimuat dari Sheet');
+    }catch(err){
+      console.error('loadData error', err);
+      updateLog('Gagal muat data: ' + (err.message || err));
+    }
+  }
+
+  async function postAction(action, row){
+    try{
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action, row }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json().catch(()=>({}));
+      return json;
+    }catch(err){
+      console.error('postAction error', err);
+      updateLog('Gagal sambung ke Sheet: ' + (err.message || err));
+      throw err;
+    }
+  }
+
+  // add / update via row object (BIL, AKTIVITI, TARIKH, TEMPAT, LAJNAH, BULAN, KOS, STATUS, BY, AT)
+  async function saveToSheet(row, mode){
+    updateLog((mode==='add'?'Tambah':'Kemas kini') + ' ke Sheet...');
+    const json = await postAction(mode, row);
+    if(json && json.message) updateLog(json.message); // apps script may return message
+    await loadData();
+  }
+
+  async function deleteFromSheet(row){
+    updateLog('Hantar permintaan padam ke Sheet...');
+    const json = await postAction('delete', row);
+    if(json && json.message) updateLog(json.message);
+    await loadData();
+  }
+
+  /***** UI ACTIONS (exposed globals used in markup) *****/
+  window.doEdit = function(i){
+    editIndex = i;
+    const row = data[i];
+    document.getElementById('formTitle').innerText = 'Kemaskini Program (Edit)';
+    document.getElementById('f_bil').value = row.BIL || '';
+    document.getElementById('f_aktiviti').value = row.AKTIVITI || '';
+    document.getElementById('f_tarikh').value = row.TARIKH || '';
+    document.getElementById('f_tempat').value = row.TEMPAT || '';
+    document.getElementById('f_lajnah').value = row.LAJNAH || '';
+    document.getElementById('f_bulan').value = row.BULAN || '';
+    document.getElementById('f_kos').value = row.KOS || '';
+    showForm();
+  };
+
+  window.doDelete = async function(i){
+    if(!confirm('Padam rekod ini?')) return;
+    const row = data[i];
+    // optimistic local remove for snappiness
+    data.splice(i,1);
+    rebuildFilters(); applyFilters();
+    try{
+      await deleteFromSheet(row);
+      updateLog('Rekod dipadam');
+    }catch(e){
+      updateLog('Gagal padam (periksa sambungan)');
+      await loadData(); // reload to resync
+    }
+  };
+
+  window.changeStatus = async function(i, st){
+    const row = data[i];
+    const newRow = Object.assign({}, row, { STATUS: st, BY: isAdmin ? 'Admin' : 'User', AT: nowString() });
+    try{
+      await saveToSheet(newRow, 'update'); // re-use update action
+      updateLog('Status dikemaskini ke ' + st);
+    }catch(e){
+      updateLog('Gagal update status');
+    }
+  };
+
+  /***** FORM CONTROL *****/
+  function showForm(){ document.getElementById('formCard').style.display='block'; document.getElementById('f_aktiviti').focus(); }
+  function hideForm(){ document.getElementById('formCard').style.display='none'; document.getElementById('formTitle').innerText='Tambah Program'; editIndex=-1; clearForm(); }
+  function clearForm(){ ['f_bil','f_aktiviti','f_tarikh','f_tempat','f_lajnah','f_bulan','f_kos'].forEach(id=>document.getElementById(id).value=''); }
+
+  document.getElementById('btnShowAdd').addEventListener('click', ()=>{ hideForm(); document.getElementById('formTitle').innerText='Tambah Program'; showForm(); });
+  document.getElementById('btnCancel').addEventListener('click', ()=>{ hideForm(); });
+
+  document.getElementById('btnAdd').addEventListener('click', async ()=>{
+    const newRow = {
+      BIL: document.getElementById('f_bil').value || (data.length + 1),
+      AKTIVITI: document.getElementById('f_aktiviti').value.trim(),
+      TARIKH: document.getElementById('f_tarikh').value.trim(),
+      TEMPAT: document.getElementById('f_tempat').value.trim(),
+      LAJNAH: document.getElementById('f_lajnah').value.trim(),
+      BULAN: document.getElementById('f_bulan').value.trim(),
+      KOS: Number(document.getElementById('f_kos').value) || 0,
+      STATUS: isAdmin ? 'Lulus' : 'Menunggu Kelulusan',
+      BY: isAdmin ? 'Admin' : 'User',
+      AT: nowString()
+    };
+    if(!newRow.AKTIVITI){ alert('Sila isi nama aktiviti'); return; }
+
+    hideForm();
+    // optimistic push for UX
+    if(editIndex >= 0){
+      data[editIndex] = newRow;
+      rebuildFilters(); applyFilters();
+      try{
+        await saveToSheet(newRow, 'update');
+      }catch(e){
+        updateLog('Gagal kemaskini, cuba semula');
+        await loadData();
+      }
+    } else {
+      data.push(newRow);
+      rebuildFilters(); applyFilters();
+      try{
+        await saveToSheet(newRow, 'add');
+      }catch(e){
+        updateLog('Gagal tambah, cuba semula');
+        await loadData();
+      }
+    }
+  });
+
+  /***** LOGIN UI (qamar/qamar) *****/
+  const overlay = document.getElementById('loginOverlay');
+  document.getElementById('btnLogin').addEventListener('click', ()=>{ overlay.style.display='flex'; document.getElementById('loginErr').style.display='none'; document.getElementById('loginId').value=''; document.getElementById('loginPass').value=''; document.getElementById('loginId').focus(); });
+  document.getElementById('loginClose').addEventListener('click', ()=>overlay.style.display='none');
+  document.getElementById('loginSubmit').addEventListener('click', doLogin);
+
+  function doLogin(){
+    const id = document.getElementById('loginId').value.trim();
+    const pw = document.getElementById('loginPass').value.trim();
+    if(id==='qamar' && pw==='qamar'){
+      isAdmin = true;
+      overlay.style.display='none';
+      localStorage.setItem('isAdmin','1');
+      updateUserUI();
+      updateLog('Admin login');
+      loadData();
+    } else {
+      document.getElementById('loginErr').style.display='block';
+      document.getElementById('loginErr').innerText='ID atau password salah.';
+    }
+  }
+
+  function updateUserUI(){
+    const who = isAdmin ? 'Admin (qamar)' : 'Guest';
+    document.getElementById('who').innerText = who;
+    document.getElementById('btnLogin').style.display = isAdmin ? 'none' : 'inline-block';
+    document.getElementById('btnLogout').style.display = isAdmin ? 'inline-block' : 'none';
+  }
+
+  document.getElementById('btnLogout').addEventListener('click', ()=>{
+    isAdmin = false;
+    localStorage.removeItem('isAdmin');
+    updateUserUI();
+    updateLog('Logout');
+    loadData();
+  });
+
+  /***** EXPORT CSV (current visible rows) *****/
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    // export current filtered view (applyFilters -> renderTable used; but we can export all data currently in 'data' but filtered for guest)
+    const rows = data.filter(r => isAdmin ? true : r.STATUS === 'Lulus');
+    const header = ['BIL','AKTIVITI','TARIKH','TEMPAT','LAJNAH','BULAN','STATUS','BY','AT','KOS'];
+    const csvRows = [header.join(',')];
+    rows.forEach(r=>{
+      csvRows.push([
+        r.BIL,
+        `"${String(r.AKTIVITI||'').replace(/"/g,'""')}"`,
+        r.TARIKH || '',
+        r.TEMPAT || '',
+        r.LAJNAH || '',
+        r.BULAN || '',
+        r.STATUS || '',
+        r.BY || '',
+        r.AT || '',
+        r.KOS || 0
+      ].join(','));
+    });
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'program_lajnah_pemuda_2025_2026.csv'; a.click(); URL.revokeObjectURL(url);
+    updateLog('Eksport CSV dibuat');
+  });
+
+  // search & filters
+  document.getElementById('search').addEventListener('input', applyFilters);
+  selectLajnah.addEventListener('change', applyFilters);
+  selectBulan.addEventListener('change', applyFilters);
+  document.getElementById('btnClear').addEventListener('click', ()=>{ document.getElementById('search').value=''; selectLajnah.value=''; selectBulan.value=''; applyFilters(); });
+
+  /***** INIT *****/
+  (function init(){
+    if(localStorage.getItem('isAdmin')) isAdmin = true;
+    updateUserUI();
+    loadData();
+  })();
+
+  </script>
+</body>
+</html>
