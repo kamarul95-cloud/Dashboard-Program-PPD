@@ -3,467 +3,405 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard Program Lajnah / Jabatan — 2025-2026 (v1.2)</title>
+  <title>Dashboard — Live Test</title>
   <style>
-    :root{--bg:#071024;--card:#0b1220;--muted:#94a3b8;--accent:#06b6d4;--glass: rgba(255,255,255,0.03)}
-    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
-    body{margin:0;background:linear-gradient(180deg,#071024 0%,#081025 60%);color:#e6eef6;min-height:100vh;padding:28px}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:18px;background:#071024;color:#e6eef6}
     .wrap{max-width:1100px;margin:0 auto}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-    h1{font-size:20px;margin:0}
-    p.lead{margin:0;color:var(--muted);font-size:13px}
-    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 24px rgba(3,7,18,0.6);}
-
-    /* controls */
-    .controls{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
-    input[type=text],input[type=password],select{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px 10px;border-radius:8px;min-width:140px}
-    button{background:var(--accent);border:none;padding:9px 12px;border-radius:8px;color:#04283a;font-weight:600;cursor:pointer}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-
-    /* table */
-    .table-wrap{overflow:auto;margin-top:12px}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    thead th{position:sticky;top:0;background:linear-gradient(180deg,#071224,#08182a);text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.04);font-weight:600}
-    tbody td{padding:10px;border-bottom:1px dashed rgba(255,255,255,0.03)}
-    tbody tr:hover{background:rgba(255,255,255,0.02)}
-    .muted{color:var(--muted);font-size:12px}
-
-    /* form */
-    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
-    .small{font-size:12px;padding:7px}
-
-    footer{margin-top:18px;color:var(--muted);font-size:12px}
-
-    /* status pills */
-    .pill{padding:6px 8px;border-radius:999px;font-size:12px;font-weight:600}
-    .s-draft{background:#fef3c7;color:#a16207} /* yellow */
-    .s-pend{background:#bfdbfe;color:#1e3a8a} /* blue */
-    .s-accept{background:#bbf7d0;color:#064e3b} /* green */
-    .s-reject{background:#fecaca;color:#7f1d1d} /* red */
-
-    /* login modal */
-    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.7)}
-    .login-card{width:340px;padding:18px;border-radius:12px;background:linear-gradient(180deg,#071226,#0b1526)}
-
-    .hint{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;color:var(--muted);font-size:13px}
-
-    .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
-
-    @media(max-width:640px){.form-grid{grid-template-columns:1fr}}
-    /* small visual tweak for disabled ghost btn */
-    button[disabled] { opacity:0.5; cursor:not-allowed; }
+    .card{background:#0b1220;padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    button{background:#06b6d4;border:none;padding:8px 10px;border-radius:8px;color:#04283a;font-weight:700;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#94a3b8}
+    input,select{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:inherit}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;border-bottom:1px dashed rgba(255,255,255,0.03);text-align:left}
+    thead th{position:sticky;top:0;background:linear-gradient(180deg,#071224,#08182a);z-index:2}
+    .muted{color:#94a3b8;font-size:13px}
+    .right{margin-left:auto;display:flex;gap:8px}
+    #log{margin-top:10px;font-size:13px;color:#cde}
+    .pill{padding:4px 8px;border-radius:999px;font-weight:700;font-size:12px}
+    .admin-badge{background:#bbf7d0;color:#064e3b;padding:6px 10px;border-radius:8px}
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6)}
+    .modal{background:#0b1520;padding:16px;border-radius:10px;min-width:320px}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <div>
-        <h1>Dashboard Program — Lajnah / Jabatan Pemuda (2025–2026)</h1>
-        <p class="lead">Versi 1.2 — Live with Google Sheet. Log masuk: id/password <code>qamar</code>/<code>qamar</code>.</p>
+        <h2 style="margin:0">Dashboard Program — (Live)</h2>
+        <div class="muted">Uji sambungan ke Google Apps Script — baca/tambah/kemaskini.</div>
       </div>
-      <div id="userBox" class="muted">Status: <span id="who">Guest</span> &nbsp; <button id="btnLogout" class="ghost" style="display:none">Logout</button></div>
-    </header>
-
-    <div class="card">
-      <div class="controls">
-        <input id="search" type="text" placeholder="Cari aktiviti / tempat..." />
-        <select id="filterLajnah"><option value="">-- Semua Lajnah / Jabatan --</option></select>
-        <select id="filterBulan"><option value="">-- Semua Bulan --</option></select>
-        <button id="btnClear" class="ghost">Reset</button>
-        <button id="btnExport">Export CSV</button>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div id="who" class="muted">Guest</div>
         <div class="right">
-          <button id="btnShowAdd">Tambah Program Baru</button>
+          <button id="btnRefresh" class="ghost">Muat Semula</button>
+          <button id="btnAddNew">Tambah</button>
           <button id="btnLogin" class="ghost">Log Masuk</button>
         </div>
       </div>
+    </header>
 
-      <div class="hint" id="topHint">💡 Untuk tambah data baru, klik “Tambah Program Baru”. Untuk edit, tekan butang “Edit” pada baris jadual — borang akan muncul secara automatik dengan data terisi. Rekod baru memerlukan kelulusan oleh Admin.</div>
+    <div class="card">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <input id="search" placeholder="Cari aktiviti / tempat..." style="flex:1" />
+        <select id="filterLajnah"><option value="">-- Semua Lajnah --</option></select>
+        <select id="filterBulan"><option value="">-- Semua Bulan --</option></select>
+        <button id="btnClear" class="ghost">Reset</button>
+      </div>
 
-      <div class="table-wrap card" style="margin:12px 0 0 0;padding:0;border-radius:10px;">
-        <table id="dataTable">
-          <thead>
-            <tr>
-              <th>BIL</th>
-              <th>AKTIVITI / PROGRAM</th>
-              <th>TARIKH</th>
-              <th>TEMPAT</th>
-              <th>LAJNAH / JABATAN</th>
-              <th>BULAN</th>
-              <th>STATUS</th>
-              <th style="text-align:right">KOS (RM)</th>
-              <th>ACTION</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
+      <div id="tableWrap">
+        <table id="tbl">
+          <thead><tr id="theadRow"></tr></thead>
+          <tbody id="tbody"></tbody>
         </table>
-        <div id="emptyMsg" class="muted" style="padding:18px;display:none">Tiada rekod untuk dipaparkan.</div>
       </div>
 
-      <!-- form (hidden by default) -->
-      <div id="formCard" class="card" style="margin-top:12px;display:none">
-        <strong id="formTitle">Tambah Program</strong>
-        <div class="form-grid" style="margin-top:8px">
-          <input id="f_bil" class="small" placeholder="BIL" />
-          <input id="f_aktiviti" class="small" placeholder="AKTIVITI / PROGRAM" />
-          <input id="f_tarikh" class="small" placeholder="TARIKH (dd/mm/yyyy)" />
-          <input id="f_tempat" class="small" placeholder="TEMPAT" />
-          <input id="f_lajnah" class="small" placeholder="LAJNAH / JABATAN" />
-          <input id="f_bulan" class="small" placeholder="BULAN (contoh: November)" />
-          <input id="f_kos" class="small" placeholder="KOS (RM)" />
-          <div>
-            <button id="btnAdd">Simpan</button>
-            <button id="btnCancel" class="ghost">Batal</button>
-          </div>
-        </div>
-        <div class="muted" style="margin-top:8px;font-size:12px">Catatan: Rekod baru akan dimasukkan sebagai <strong>Menunggu Kelulusan</strong> (kecuali Admin membuatnya Lulus terus).</div>
-      </div>
+      <div id="emptyMsg" class="muted" style="display:none;padding:12px">Tiada rekod untuk dipaparkan.</div>
 
-      <hr style="border:none;height:8px;background:transparent" />
-
-      <div class="muted" style="font-size:13px">Log ringkas: <span id="logLine">—</span></div>
-
+      <div id="log" class="muted">Log: ready</div>
     </div>
-
-    <footer>Tip: login sebagai Admin untuk melihat/urus semua rekod.</footer>
   </div>
 
-  <!-- login overlay -->
-  <div id="loginOverlay" class="overlay" style="display:none">
-    <div class="login-card">
-      <h3>Log Masuk</h3>
-      <p class="muted">Masukkan ID dan password (ujian: <code>qamar</code> / <code>qamar</code>).</p>
-      <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
-        <input id="loginId" placeholder="ID" />
-        <input id="loginPass" placeholder="Password" type="password" />
+  <!-- form modal -->
+  <div id="modal" class="overlay" style="display:none">
+    <div class="modal">
+      <h3 id="modalTitle">Tambah / Edit</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <input id="m_bil" placeholder="BIL" />
+        <input id="m_program" placeholder="Aktiviti / Program" />
+        <input id="m_tarikh" placeholder="Tarikh (dd/mm/yyyy)" />
+        <input id="m_tempat" placeholder="Tempat" />
+        <input id="m_lajnah" placeholder="Lajnah / Jabatan" />
+        <input id="m_bulan" placeholder="Bulan" />
+        <input id="m_kos" placeholder="Kos (RM)" />
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+        <button id="m_cancel" class="ghost">Batal</button>
+        <button id="m_save">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- login modal -->
+  <div id="loginModal" class="overlay" style="display:none">
+    <div class="modal">
+      <h3>Log Masuk Admin</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+        <input id="li_id" placeholder="ID" />
+        <input id="li_pw" placeholder="Password" type="password" />
         <div style="display:flex;gap:8px;justify-content:flex-end">
-          <button id="loginSubmit">Log Masuk</button>
-          <button id="loginClose" class="ghost">Tutup</button>
+          <button id="li_cancel" class="ghost">Batal</button>
+          <button id="li_ok">Log Masuk</button>
         </div>
-        <div id="loginErr" class="muted" style="display:none;color:#fecaca"></div>
+        <div id="li_err" class="muted" style="color:#fca5a5;display:none"></div>
       </div>
     </div>
   </div>
 
-  <script>
-  /***** CONFIG: letakkan URL Apps Script (yang kau sediakan) di sini *****/
-  const API_URL = 'https://script.google.com/macros/s/AKfycbx0vXghbmsoA-XT9odtwGemRtOXqo4oMeQdkhdJeDlLQ6tVnWNZ3r7nImO28aUIZB-uNw/exec';
+<script>
+/* ====== CONFIG ====== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbx0vXghbmsoA-XT9odtwGemRtOXqo4oMeQdkhdJeDlLQ6tVnWNZ3r7nImO28aUIZB-uNw/exechttps://script.google.com/macros/s/AKfycbxBe-Nx5uh5xGomOuEzf9XmP-qoz0rTsAHldhVleoOviSVJT4NWcahj0DyFb-Anz0DMNQ/exec';
+/* ====== END CONFIG ====== */
 
-  /***** STATE & INITIAL SAMPLE (will be replaced by sheet data on load) *****/
-  let data = [];      // will be filled by loadData()
-  let editIndex = -1;
-  let isAdmin = false;
+let RAW = [];        // raw rows from server
+let DATA = [];       // normalized objects {bil, program, tarikh, tempat, lajnah, bulan, kos}
+let editIndex = -1;
+let isAdmin = false;
 
-  // elements
-  const tbody = document.querySelector('#dataTable tbody');
-  const selectLajnah = document.getElementById('filterLajnah');
-  const selectBulan = document.getElementById('filterBulan');
+/* ---------- UTIL ---------- */
+function log(msg){ document.getElementById('log').innerText = 'Log: ' + msg; console.log('[DASH]', msg); }
+function show(el){ el.style.display='block'; }
+function hide(el){ el.style.display='none'; }
+function toNum(v){ const n=Number(String(v).replace(/,/g,'')); return isNaN(n)?0:n; }
 
-  // helpers
-  function nowString(){ return new Date().toLocaleString(); }
-  function updateLog(msg){ document.getElementById('logLine').innerText = msg + ' — ' + nowString(); }
-  function formatMoney(x){ return Number(x||0).toLocaleString('en-US'); }
-  function escapeHtml(str){ if(str===undefined || str===null) return ''; return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-  function normalizeRow(raw){
-    // handle possible header naming differences from sheet (e.g. 'AKTIVITI/PROGRAM' vs 'AKTIVITI')
+/* Normalize server row to object
+   Accepts:
+   - object with keys (bil, program, tarikh, tempat, lajnah, bulan, kos) OR
+   - array (row) where columns correspond to [bil, program, tarikh, tempat, lajnah, bulan, kos] OR
+   - object with other header names (attempt to map)
+*/
+function normalizeRow(raw){
+  if(!raw) return null;
+  // object-like with keys
+  if(typeof raw === 'object' && !Array.isArray(raw)){
+    const keys = Object.keys(raw).map(k=>k.toLowerCase());
+    // common key detection
+    const pick = (candidates) => {
+      for(const cand of candidates){
+        const idx = keys.indexOf(cand.toLowerCase());
+        if(idx !== -1) return raw[Object.keys(raw)[idx]];
+      }
+      return undefined;
+    };
     return {
-      BIL: raw.BIL ?? raw['BIL'] ?? raw['No'] ?? raw['No.'] ?? '',
-      AKTIVITI: raw.AKTIVITI ?? raw['AKTIVITI/PROGRAM'] ?? raw['AKTIVITI / PROGRAM'] ?? raw['AKTIVITI / PROGRAM'] ?? raw['ACTIVITY'] ?? '',
-      TARIKH: raw.TARIKH ?? raw['TARIKH'] ?? '',
-      TEMPAT: raw.TEMPAT ?? raw['TEMPAT'] ?? '',
-      LAJNAH: raw.LAJNAH ?? raw['LAJNAH'] ?? raw['LAJNAH/JABATAN'] ?? raw['LAJNAH / JABATAN'] ?? '',
-      BULAN: raw.BULAN ?? raw['BULAN'] ?? raw['MONTH'] ?? '',
-      KOS: raw.KOS ?? raw['KOS'] ?? raw['COST'] ?? 0,
-      STATUS: raw.STATUS ?? raw['STATUS'] ?? 'Draf',
-      BY: raw.BY ?? raw['BY'] ?? raw['CREATED_BY'] ?? '',
-      AT: raw.AT ?? raw['AT'] ?? raw['TIMESTAMP'] ?? ''
+      bil: pick(['bil','no','no.']) ?? raw.BIL ?? raw.Bil ?? '',
+      program: pick(['aktiviti/program','aktiviti','program']) ?? raw['AKTIVITI/PROGRAM'] ?? raw['AKTIVITI'] ?? '',
+      tarikh: pick(['tarikh','date']) ?? raw.TARIKH ?? '',
+      tempat: pick(['tempat','venue']) ?? raw.TEMPAT ?? '',
+      lajnah: pick(['lajnah/jabatan','lajnah','jabatan']) ?? raw['LAJNAH/JABATAN'] ?? '',
+      bulan: pick(['bulan','month']) ?? raw.BULAN ?? '',
+      kos: pick(['kos','cost']) ?? raw.KOS ?? 0
     };
   }
-
-  function statusPill(status){
-    if(status==='Draf') return `<span class="pill s-draft">Draf</span>`;
-    if(status==='Menunggu Kelulusan') return `<span class="pill s-pend">Menunggu</span>`;
-    if(status==='Lulus') return `<span class="pill s-accept">Lulus</span>`;
-    if(status==='Ditolak') return `<span class="pill s-reject">Ditolak</span>`;
-    return `<span class="pill">${escapeHtml(status)}</span>`;
+  // array-like
+  if(Array.isArray(raw)){
+    return {
+      bil: raw[0] ?? '',
+      program: raw[1] ?? '',
+      tarikh: raw[2] ?? '',
+      tempat: raw[3] ?? '',
+      lajnah: raw[4] ?? '',
+      bulan: raw[5] ?? '',
+      kos: raw[6] ?? 0
+    };
   }
+  return null;
+}
 
-  /***** RENDER TABLE (uses global data) *****/
-  function renderTable(filtered){
-    tbody.innerHTML = '';
-    if(filtered.length === 0){
-      document.getElementById('emptyMsg').style.display = 'block';
-      return;
-    } else document.getElementById('emptyMsg').style.display = 'none';
+/* ---------- RENDER ---------- */
+function renderTable(){
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  const theadRow = document.getElementById('theadRow');
+  theadRow.innerHTML = '';
+  // build header
+  const headers = ['BIL','AKTIVITI / PROGRAM','TARIKH','TEMPAT','LAJNAH / JABATAN','BULAN','KOS','ACTION'];
+  headers.forEach(h=>{
+    const th = document.createElement('th'); th.innerText=h; theadRow.appendChild(th);
+  });
 
-    filtered.forEach((row, idx) => {
-      const tr = document.createElement('tr');
-      let actions = '';
-      if(isAdmin){
-        actions = `<button class="ghost" onclick="doEdit(${idx})">Edit</button> <button class="ghost" onclick="doDelete(${idx})">Padam</button> <button class="ghost" onclick="changeStatus(${idx},'Lulus')">Lulus</button> <button class="ghost" onclick="changeStatus(${idx},'Ditolak')">Tolak</button>`;
-      } else {
-        actions = row.STATUS === 'Draf' ? `<button class="ghost" onclick="doEdit(${idx})">Edit</button>` : `<button class="ghost" disabled>Lock</button>`;
-      }
+  if(DATA.length === 0){ show(document.getElementById('emptyMsg')); return; }
+  hide(document.getElementById('emptyMsg'));
 
-      tr.innerHTML = `
-        <td>${escapeHtml(row.BIL)}</td>
-        <td>${escapeHtml(row.AKTIVITI)}</td>
-        <td>${escapeHtml(row.TARIKH || '')}</td>
-        <td>${escapeHtml(row.TEMPAT || '')}</td>
-        <td>${escapeHtml(row.LAJNAH || '')}</td>
-        <td class="muted">${escapeHtml(row.BULAN || '')}</td>
-        <td>${statusPill(row.STATUS)}</td>
-        <td style="text-align:right">${formatMoney(row.KOS)}</td>
-        <td>${actions}<div class="muted" style="font-size:11px;margin-top:6px">${escapeHtml(row.BY||'')} • ${escapeHtml(row.AT||'')}</div></td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function unique(arr){ return [...new Set(arr.filter(x=>x && x.toString().trim()!=='').map(x=>x.toString().trim()))]; }
-
-  function rebuildFilters(){
-    const laj = unique(data.map(r=>r.LAJNAH));
-    const bul = unique(data.map(r=>r.BULAN));
-    selectLajnah.innerHTML = '<option value="">-- Semua Lajnah / Jabatan --</option>' + laj.map(x=>`<option value="${x}">${x}</option>`).join('');
-    selectBulan.innerHTML = '<option value="">-- Semua Bulan --</option>' + bul.map(x=>`<option value="${x}">${x}</option>`).join('');
-  }
-
-  function applyFilters(){
-    const q = document.getElementById('search').value.toLowerCase().trim();
-    const fl = selectLajnah.value;
-    const fb = selectBulan.value;
-    const filtered = data.filter(r => {
-      if(!isAdmin && r.STATUS !== 'Lulus') return false;
-      if(fl && (r.LAJNAH ?? '') !== fl) return false;
-      if(fb && (r.BULAN ?? '') !== fb) return false;
-      if(q){
-        const hay = ((r.AKTIVITI||'') + ' ' + (r.TEMPAT||'') + ' ' + (r.LAJNAH||'') + ' ' + (r.BULAN||'') + ' ' + (r.TARIKH||'')).toLowerCase();
-        if(!hay.includes(q)) return false;
-      }
-      return true;
-    });
-    renderTable(filtered);
-  }
-
-  /***** GOOGLE SHEET INTEGRATION (reads + writes) *****/
-  async function loadData(){
-    updateLog('Muat data dari Google Sheet...');
-    try{
-      const url = API_URL + (API_URL.includes('?') ? '&' : '?') + 'action=read';
-      const res = await fetch(url);
-      if(!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json();
-      // expecting { data: [ ... ] } or maybe raw array; handle both
-      let raw = [];
-      if(Array.isArray(json)) raw = json;
-      else if(Array.isArray(json.data)) raw = json.data;
-      else if(json && typeof json === 'object' && Array.isArray(json.result)) raw = json.result;
-      else raw = [];
-      data = raw.map(r => normalizeRow(r));
-      rebuildFilters();
-      applyFilters();
-      updateLog('Data berjaya dimuat dari Sheet');
-    }catch(err){
-      console.error('loadData error', err);
-      updateLog('Gagal muat data: ' + (err.message || err));
+  DATA.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.bil ?? ''}</td>
+      <td>${r.program ?? ''}</td>
+      <td>${r.tarikh ?? ''}</td>
+      <td>${r.tempat ?? ''}</td>
+      <td>${r.lajnah ?? ''}</td>
+      <td>${r.bulan ?? ''}</td>
+      <td style="text-align:right">${r.kos ?? ''}</td>
+      <td></td>
+    `;
+    const actionTd = tr.querySelector('td:last-child');
+    if(isAdmin){
+      const editBtn = document.createElement('button'); editBtn.className='ghost'; editBtn.innerText='Edit';
+      editBtn.onclick = ()=> openModalForEdit(i);
+      const delBtn = document.createElement('button'); delBtn.className='ghost'; delBtn.innerText='Padam';
+      delBtn.onclick = ()=> doDelete(i);
+      actionTd.appendChild(editBtn); actionTd.appendChild(document.createTextNode(' ')); actionTd.appendChild(delBtn);
+    } else {
+      const lock = document.createElement('span'); lock.className='muted'; lock.innerText='—';
+      actionTd.appendChild(lock);
     }
-  }
+    tbody.appendChild(tr);
+  });
+}
 
-  async function postAction(action, row){
+/* ---------- FETCH DATA ---------- */
+async function loadData(){
+  log('Memuat data dari server...');
+  try{
+    const res = await fetch(API_URL + (API_URL.includes('?') ? '&' : '?') + 'action=read', {cache:'no-store'});
+    const text = await res.text();
+    let json;
+    try{ json = JSON.parse(text); } catch(e){ json = text; }
+    console.log('RAW RESPONSE:', json);
+
+    let rows = [];
+    // possible shapes:
+    // 1) { success:true, data:[ {..}, {...} ] }
+    if(json && typeof json === 'object' && Array.isArray(json.data)) rows = json.data;
+    // 2) array of objects or arrays
+    else if(Array.isArray(json)) rows = json;
+    // 3) maybe { success:true, result: [...] }
+    else if(json && typeof json === 'object' && Array.isArray(json.result)) rows = json.result;
+    else{
+      log('Tindak balas tak difahami, periksa console.');
+      console.warn('Unknown response:', json);
+      rows = [];
+    }
+
+    // normalize
+    RAW = rows;
+    DATA = rows.map(r => normalizeRow(r)).filter(x=>x !== null);
+    log('Data dimuat: ' + DATA.length + ' baris.');
+    renderTable();
+    buildFilters();
+  } catch(err){
+    console.error('loadData error', err);
+    log('Gagal muat data: ' + err.message);
+  }
+}
+
+/* ---------- FILTERS ---------- */
+function buildFilters(){
+  const lajEl = document.getElementById('filterLajnah');
+  const bulEl = document.getElementById('filterBulan');
+  const laj = [...new Set(DATA.map(r => (r.lajnah || '').toString().trim()).filter(x=>x))].sort();
+  const bul = [...new Set(DATA.map(r => (r.bulan || '').toString().trim()).filter(x=>x))].sort();
+  lajEl.innerHTML = '<option value="">-- Semua Lajnah --</option>' + laj.map(x=>`<option value="${x}">${x}</option>`).join('');
+  bulEl.innerHTML = '<option value="">-- Semua Bulan --</option>' + bul.map(x=>`<option value="${x}">${x}</option>`).join('');
+}
+function applyFilters(){
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const fl = document.getElementById('filterLajnah').value;
+  const fb = document.getElementById('filterBulan').value;
+  const filtered = DATA.filter(r=>{
+    if(fl && (r.lajnah||'') !== fl) return false;
+    if(fb && (r.bulan||'') !== fb) return false;
+    if(q){
+      const hay = ((r.program||'') + ' ' + (r.tempat||'') + ' ' + (r.lajnah||'') + ' ' + (r.bulan||'')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  // render filtered
+  const prev = DATA;
+  DATA = filtered;
+  renderTable();
+  DATA = prev; // restore original after render
+}
+
+/* ---------- MODAL / ADD / EDIT ---------- */
+function openModalForAdd(){
+  editIndex = -1;
+  document.getElementById('modalTitle').innerText = 'Tambah Program';
+  clearModalFields();
+  show(document.getElementById('modal'));
+}
+function openModalForEdit(i){
+  editIndex = i;
+  const r = DATA[i];
+  document.getElementById('modalTitle').innerText = 'Kemaskini Program';
+  document.getElementById('m_bil').value = r.bil ?? '';
+  document.getElementById('m_program').value = r.program ?? '';
+  document.getElementById('m_tarikh').value = r.tarikh ?? '';
+  document.getElementById('m_tempat').value = r.tempat ?? '';
+  document.getElementById('m_lajnah').value = r.lajnah ?? '';
+  document.getElementById('m_bulan').value = r.bulan ?? '';
+  document.getElementById('m_kos').value = r.kos ?? '';
+  show(document.getElementById('modal'));
+}
+function clearModalFields(){
+  ['m_bil','m_program','m_tarikh','m_tempat','m_lajnah','m_bulan','m_kos'].forEach(id=>document.getElementById(id).value='');
+}
+document.getElementById('m_cancel').addEventListener('click', ()=>hide(document.getElementById('modal')));
+
+document.getElementById('m_save').addEventListener('click', async ()=>{
+  const record = {
+    bil: document.getElementById('m_bil').value || '',
+    program: document.getElementById('m_program').value || '',
+    tarikh: document.getElementById('m_tarikh').value || '',
+    tempat: document.getElementById('m_tempat').value || '',
+    lajnah: document.getElementById('m_lajnah').value || '',
+    bulan: document.getElementById('m_bulan').value || '',
+    kos: document.getElementById('m_kos').value || 0
+  };
+  if(!record.program){ alert('Sila isi nama aktiviti'); return; }
+  hide(document.getElementById('modal'));
+  if(editIndex >= 0){
+    // update
     try{
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action, row }),
-        headers: { 'Content-Type': 'application/json' }
+      log('Menghantar kemaskini ke server...');
+      const resp = await fetch(API_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'update', record })
       });
-      if(!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json().catch(()=>({}));
-      return json;
-    }catch(err){
-      console.error('postAction error', err);
-      updateLog('Gagal sambung ke Sheet: ' + (err.message || err));
-      throw err;
-    }
-  }
-
-  // add / update via row object (BIL, AKTIVITI, TARIKH, TEMPAT, LAJNAH, BULAN, KOS, STATUS, BY, AT)
-  async function saveToSheet(row, mode){
-    updateLog((mode==='add'?'Tambah':'Kemas kini') + ' ke Sheet...');
-    const json = await postAction(mode, row);
-    if(json && json.message) updateLog(json.message); // apps script may return message
-    await loadData();
-  }
-
-  async function deleteFromSheet(row){
-    updateLog('Hantar permintaan padam ke Sheet...');
-    const json = await postAction('delete', row);
-    if(json && json.message) updateLog(json.message);
-    await loadData();
-  }
-
-  /***** UI ACTIONS (exposed globals used in markup) *****/
-  window.doEdit = function(i){
-    editIndex = i;
-    const row = data[i];
-    document.getElementById('formTitle').innerText = 'Kemaskini Program (Edit)';
-    document.getElementById('f_bil').value = row.BIL || '';
-    document.getElementById('f_aktiviti').value = row.AKTIVITI || '';
-    document.getElementById('f_tarikh').value = row.TARIKH || '';
-    document.getElementById('f_tempat').value = row.TEMPAT || '';
-    document.getElementById('f_lajnah').value = row.LAJNAH || '';
-    document.getElementById('f_bulan').value = row.BULAN || '';
-    document.getElementById('f_kos').value = row.KOS || '';
-    showForm();
-  };
-
-  window.doDelete = async function(i){
-    if(!confirm('Padam rekod ini?')) return;
-    const row = data[i];
-    // optimistic local remove for snappiness
-    data.splice(i,1);
-    rebuildFilters(); applyFilters();
+      const j = await resp.json().catch(()=>({}));
+      console.log('UPDATE RESPONSE', j);
+      if(j && j.success) { log('Kemas kini berjaya'); }
+      else log('Respon server: ' + (j.message || JSON.stringify(j)));
+    }catch(e){ console.error(e); log('Gagal kemaskini: ' + e.message); }
+  } else {
+    // add
     try{
-      await deleteFromSheet(row);
-      updateLog('Rekod dipadam');
-    }catch(e){
-      updateLog('Gagal padam (periksa sambungan)');
-      await loadData(); // reload to resync
-    }
-  };
-
-  window.changeStatus = async function(i, st){
-    const row = data[i];
-    const newRow = Object.assign({}, row, { STATUS: st, BY: isAdmin ? 'Admin' : 'User', AT: nowString() });
-    try{
-      await saveToSheet(newRow, 'update'); // re-use update action
-      updateLog('Status dikemaskini ke ' + st);
-    }catch(e){
-      updateLog('Gagal update status');
-    }
-  };
-
-  /***** FORM CONTROL *****/
-  function showForm(){ document.getElementById('formCard').style.display='block'; document.getElementById('f_aktiviti').focus(); }
-  function hideForm(){ document.getElementById('formCard').style.display='none'; document.getElementById('formTitle').innerText='Tambah Program'; editIndex=-1; clearForm(); }
-  function clearForm(){ ['f_bil','f_aktiviti','f_tarikh','f_tempat','f_lajnah','f_bulan','f_kos'].forEach(id=>document.getElementById(id).value=''); }
-
-  document.getElementById('btnShowAdd').addEventListener('click', ()=>{ hideForm(); document.getElementById('formTitle').innerText='Tambah Program'; showForm(); });
-  document.getElementById('btnCancel').addEventListener('click', ()=>{ hideForm(); });
-
-  document.getElementById('btnAdd').addEventListener('click', async ()=>{
-    const newRow = {
-      BIL: document.getElementById('f_bil').value || (data.length + 1),
-      AKTIVITI: document.getElementById('f_aktiviti').value.trim(),
-      TARIKH: document.getElementById('f_tarikh').value.trim(),
-      TEMPAT: document.getElementById('f_tempat').value.trim(),
-      LAJNAH: document.getElementById('f_lajnah').value.trim(),
-      BULAN: document.getElementById('f_bulan').value.trim(),
-      KOS: Number(document.getElementById('f_kos').value) || 0,
-      STATUS: isAdmin ? 'Lulus' : 'Menunggu Kelulusan',
-      BY: isAdmin ? 'Admin' : 'User',
-      AT: nowString()
-    };
-    if(!newRow.AKTIVITI){ alert('Sila isi nama aktiviti'); return; }
-
-    hideForm();
-    // optimistic push for UX
-    if(editIndex >= 0){
-      data[editIndex] = newRow;
-      rebuildFilters(); applyFilters();
-      try{
-        await saveToSheet(newRow, 'update');
-      }catch(e){
-        updateLog('Gagal kemaskini, cuba semula');
-        await loadData();
-      }
-    } else {
-      data.push(newRow);
-      rebuildFilters(); applyFilters();
-      try{
-        await saveToSheet(newRow, 'add');
-      }catch(e){
-        updateLog('Gagal tambah, cuba semula');
-        await loadData();
-      }
-    }
-  });
-
-  /***** LOGIN UI (qamar/qamar) *****/
-  const overlay = document.getElementById('loginOverlay');
-  document.getElementById('btnLogin').addEventListener('click', ()=>{ overlay.style.display='flex'; document.getElementById('loginErr').style.display='none'; document.getElementById('loginId').value=''; document.getElementById('loginPass').value=''; document.getElementById('loginId').focus(); });
-  document.getElementById('loginClose').addEventListener('click', ()=>overlay.style.display='none');
-  document.getElementById('loginSubmit').addEventListener('click', doLogin);
-
-  function doLogin(){
-    const id = document.getElementById('loginId').value.trim();
-    const pw = document.getElementById('loginPass').value.trim();
-    if(id==='qamar' && pw==='qamar'){
-      isAdmin = true;
-      overlay.style.display='none';
-      localStorage.setItem('isAdmin','1');
-      updateUserUI();
-      updateLog('Admin login');
-      loadData();
-    } else {
-      document.getElementById('loginErr').style.display='block';
-      document.getElementById('loginErr').innerText='ID atau password salah.';
-    }
+      log('Menghantar tambah ke server...');
+      const resp = await fetch(API_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'add', record })
+      });
+      const j = await resp.json().catch(()=>({}));
+      console.log('ADD RESPONSE', j);
+      if(j && j.success) { log('Tambah berjaya'); }
+      else log('Respon server: ' + (j.message || JSON.stringify(j)));
+    }catch(e){ console.error(e); log('Gagal tambah: ' + e.message); }
   }
+  // reload data after slight delay
+  setTimeout(loadData, 700);
+});
 
-  function updateUserUI(){
-    const who = isAdmin ? 'Admin (qamar)' : 'Guest';
-    document.getElementById('who').innerText = who;
-    document.getElementById('btnLogin').style.display = isAdmin ? 'none' : 'inline-block';
-    document.getElementById('btnLogout').style.display = isAdmin ? 'inline-block' : 'none';
-  }
-
-  document.getElementById('btnLogout').addEventListener('click', ()=>{
-    isAdmin = false;
-    localStorage.removeItem('isAdmin');
-    updateUserUI();
-    updateLog('Logout');
-    loadData();
-  });
-
-  /***** EXPORT CSV (current visible rows) *****/
-  document.getElementById('btnExport').addEventListener('click', ()=>{
-    // export current filtered view (applyFilters -> renderTable used; but we can export all data currently in 'data' but filtered for guest)
-    const rows = data.filter(r => isAdmin ? true : r.STATUS === 'Lulus');
-    const header = ['BIL','AKTIVITI','TARIKH','TEMPAT','LAJNAH','BULAN','STATUS','BY','AT','KOS'];
-    const csvRows = [header.join(',')];
-    rows.forEach(r=>{
-      csvRows.push([
-        r.BIL,
-        `"${String(r.AKTIVITI||'').replace(/"/g,'""')}"`,
-        r.TARIKH || '',
-        r.TEMPAT || '',
-        r.LAJNAH || '',
-        r.BULAN || '',
-        r.STATUS || '',
-        r.BY || '',
-        r.AT || '',
-        r.KOS || 0
-      ].join(','));
+/* ---------- DELETE ---------- */
+async function doDelete(i){
+  if(!confirm('Padam rekod ini?')) return;
+  const row = DATA[i];
+  try{
+    log('Hantar permintaan padam...');
+    const resp = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'delete', record: { bil: row.bil } })
     });
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'program_lajnah_pemuda_2025_2026.csv'; a.click(); URL.revokeObjectURL(url);
-    updateLog('Eksport CSV dibuat');
-  });
+    const j = await resp.json().catch(()=>({}));
+    console.log('DELETE RESPONSE', j);
+    if(j && j.success) log('Padam berjaya');
+    else log('Respon server: ' + (j.message || JSON.stringify(j)));
+  }catch(e){ console.error(e); log('Gagal padam: ' + e.message); }
+  setTimeout(loadData, 700);
+}
 
-  // search & filters
-  document.getElementById('search').addEventListener('input', applyFilters);
-  selectLajnah.addEventListener('change', applyFilters);
-  selectBulan.addEventListener('change', applyFilters);
-  document.getElementById('btnClear').addEventListener('click', ()=>{ document.getElementById('search').value=''; selectLajnah.value=''; selectBulan.value=''; applyFilters(); });
-
-  /***** INIT *****/
-  (function init(){
-    if(localStorage.getItem('isAdmin')) isAdmin = true;
-    updateUserUI();
+/* ---------- LOGIN ---------- */
+document.getElementById('btnLogin').addEventListener('click', ()=> show(document.getElementById('loginModal')));
+document.getElementById('li_cancel').addEventListener('click', ()=> hide(document.getElementById('loginModal')));
+document.getElementById('li_ok').addEventListener('click', ()=> {
+  const id = document.getElementById('li_id').value.trim();
+  const pw = document.getElementById('li_pw').value.trim();
+  if(id === 'qamar' && pw === 'qamar'){
+    isAdmin = true;
+    localStorage.setItem('isAdmin','1');
+    updateUIForAuth();
+    hide(document.getElementById('loginModal'));
+    log('Login admin berjaya');
     loadData();
-  })();
+  } else {
+    document.getElementById('li_err').style.display='block';
+    document.getElementById('li_err').innerText='ID / password salah';
+  }
+});
+function updateUIForAuth(){
+  document.getElementById('who').innerText = isAdmin ? 'Admin (qamar)' : 'Guest';
+  document.getElementById('btnLogin').style.display = isAdmin ? 'none' : 'inline-block';
+  if(isAdmin){
+    const btnLogout = document.getElementById('btnLogout');
+    if(!btnLogout){
+      const b = document.createElement('button'); b.id='btnLogout'; b.className='ghost'; b.innerText='Logout';
+      b.onclick = ()=>{ isAdmin=false; localStorage.removeItem('isAdmin'); updateUIForAuth(); loadData(); log('Logout'); };
+      document.querySelector('.right').appendChild(b);
+    } else btnLogout.style.display='inline-block';
+  }
+}
 
-  </script>
+/* ---------- Hooks ---------- */
+document.getElementById('btnRefresh').addEventListener('click', ()=> loadData());
+document.getElementById('btnAddNew').addEventListener('click', ()=> {
+  if(!isAdmin){ if(!confirm('Anda belum login sebagai Admin. Terus tambah sebagai User (rekod akan Menunggu Kelulusan)?')) return; }
+  openModalForAdd();
+});
+document.getElementById('btnClear').addEventListener('click', ()=> { document.getElementById('search').value=''; document.getElementById('filterLajnah').value=''; document.getElementById('filterBulan').value=''; applyFilters(); });
+document.getElementById('search').addEventListener('input', applyFilters);
+document.getElementById('filterLajnah').addEventListener('change', applyFilters);
+document.getElementById('filterBulan').addEventListener('change', applyFilters);
+
+/* ---------- Init ---------- */
+(function init(){
+  if(localStorage.getItem('isAdmin')) isAdmin = true;
+  updateUIForAuth();
+  loadData();
+})();
+</script>
 </body>
 </html>
