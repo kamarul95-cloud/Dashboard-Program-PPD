@@ -5,23 +5,103 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Dashboard — Live Test</title>
   <style>
-    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:18px;background:#071024;color:#e6eef6}
-    .wrap{max-width:1100px;margin:0 auto}
-    .card{background:#0b1220;padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-    button{background:#06b6d4;border:none;padding:8px 10px;border-radius:8px;color:#04283a;font-weight:700;cursor:pointer}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#94a3b8}
-    input,select{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:inherit}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{padding:8px;border-bottom:1px dashed rgba(255,255,255,0.03);text-align:left}
-    thead th{position:sticky;top:0;background:linear-gradient(180deg,#071224,#08182a);z-index:2}
-    .muted{color:#94a3b8;font-size:13px}
-    .right{margin-left:auto;display:flex;gap:8px}
-    #log{margin-top:10px;font-size:13px;color:#cde}
-    .pill{padding:4px 8px;border-radius:999px;font-weight:700;font-size:12px}
-    .admin-badge{background:#bbf7d0;color:#064e3b;padding:6px 10px;border-radius:8px}
-    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6)}
-    .modal{background:#0b1520;padding:16px;border-radius:10px;min-width:320px}
+:root{
+  --bg:#071024;
+  --card:#0b1220;
+  --muted:#94a3b8;
+  --accent:#06b6d4;
+  --glass: rgba(255,255,255,0.03);
+  --max-width:1100px;
+}
+
+/* base */
+*{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+html,body{height:100%}
+body{
+  margin:0;
+  background:linear-gradient(180deg,var(--bg) 0%,#081025 60%);
+  color:#e6eef6;
+  min-height:100vh;
+  padding:18px;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  font-size:15px; /* default desktop base */
+}
+.wrap{max-width:var(--max-width);margin:0 auto}
+
+/* header + controls */
+.card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 24px rgba(3,7,18,0.6)}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px}
+h2{font-size:18px;margin:0}
+.muted{color:var(--muted);font-size:13px}
+
+/* controls */
+input[type=text],input[type=password],select{
+  background:var(--glass);
+  border:1px solid rgba(255,255,255,0.04);
+  color:inherit;padding:8px 10px;border-radius:8px;min-width:140px;
+  font-size:14px;
+}
+button{background:var(--accent);border:none;padding:9px 12px;border-radius:8px;color:#04283a;font-weight:700;cursor:pointer;font-size:14px}
+button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+.right{margin-left:auto;display:flex;gap:8px;align-items:center}
+
+/* table */
+#tableWrap{overflow:auto;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:800px}
+thead th{position:sticky;top:0;background:linear-gradient(180deg,#071224,#08182a);text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.04);font-weight:600}
+tbody td{padding:10px;border-bottom:1px dashed rgba(255,255,255,0.03)}
+tbody tr:hover{background:rgba(255,255,255,0.02)}
+
+/* modal / overlay */
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.7);z-index:60}
+.modal{width:560px;max-width:calc(100% - 40px);background:linear-gradient(180deg,#071226,#0b1526);padding:16px;border-radius:10px}
+
+/* small UI niceties */
+#emptyMsg{padding:12px}
+#log{margin-top:10px;font-size:13px;color:#cde}
+
+/* pill */
+.pill{padding:6px 8px;border-radius:999px;font-size:12px;font-weight:600}
+
+/* RESPONSIVE: Mobile first tweaks (phones) */
+@media (max-width: 640px) {
+  body{padding:12px;font-size:17px} /* bigger text on phones */
+  .wrap{max-width:100%;padding:0}
+  header{flex-direction:column;align-items:flex-start;gap:8px}
+  h2{font-size:20px}
+  .muted{font-size:14px}
+
+  /* controls stack, inputs full width */
+  .right{width:100%;display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between}
+  input[type=text],select{min-width:0;width:100%;padding:12px;font-size:16px;border-radius:10px}
+  button{padding:12px;font-size:16px;border-radius:10px}
+  button.ghost{padding:12px}
+
+  /* table becomes horizontally scrollable but with larger spacing so it 'feels' bigger */
+  table{font-size:16px;min-width:640px}
+  thead th{padding:12px}
+  tbody td{padding:14px}
+
+  /* modal full-screen friendly */
+  .modal{width:100%;height:auto;border-radius:12px;padding:14px}
+}
+
+/* Larger screens (wider desktop) — make content use more width and breathe */
+@media (min-width: 1200px) {
+  :root{--max-width:1300px}
+  body{font-size:15px}
+  .card{padding:18px}
+  table{min-width:1000px}
+  .modal{width:720px}
+}
+
+/* Accessibility: focus outlines */
+button:focus, input:focus, select:focus { outline:3px solid rgba(6,182,212,0.12); outline-offset:2px }
+
+/* small helper */
+.center{display:flex;align-items:center;justify-content:center}
+
   </style>
 </head>
 <body>
